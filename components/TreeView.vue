@@ -40,8 +40,8 @@
         </span>
 
         <span>
-          <NuxtLink :to="`/category/${getLocalizedInfo(node)?.link}`">{{
-            getLocalizedInfo(node)?.cg_name
+          <NuxtLink :title="getLocalizedInfo(node)?.cg_name" :to="`/category/${getLocalizedInfo(node)?.link}`">{{
+            textSlicer(20, getLocalizedInfo(node)?.cg_name || '')
           }}</NuxtLink>
         </span>
       </div>

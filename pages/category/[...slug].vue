@@ -48,28 +48,38 @@ const findCategoryBySlug = (
       );
 };
 
-const generateBreadcrumbs = (category: Category | null) => {
+const generateBreadcrumbs = (category: Category | null): { name: string; link: string }[] => {
   const breadcrumbList = [];
   if (category) {
     const parentPath = category.path_to_top || [];
-    breadcrumbList.push(
-      ...parentPath.map((id) => {
-        const parentCategory = categories.value.find((cat) => cat.id === id);
-        return parentCategory
-          ? {
-              name: getLocalizedInfo(parentCategory)?.cg_name || "",
-              link: `/category/${getLocalizedInfo(parentCategory)?.cg_slug || ""}`,
-            }
-          : {};
-      })
-    );
+
+    // Собираем путь для каждой категории в path_to_top, формируя правильные ссылки
+    let accumulatedPath = '';
+    parentPath.forEach((id) => {
+      const parentCategory = categories.value.find((cat) => cat.id === id);
+      if (parentCategory) {
+        const localizedInfo = getLocalizedInfo(parentCategory);
+        accumulatedPath += `/${localizedInfo?.cg_slug || ''}`;
+        
+        breadcrumbList.push({
+          name: localizedInfo?.cg_name || '',
+          link: `/category${accumulatedPath}`,
+        });
+      }
+    });
+
+    // Добавляем текущую категорию в конец крошек
+    const currentCategoryInfo = getLocalizedInfo(category);
+    accumulatedPath += `/${currentCategoryInfo?.cg_slug || ''}`;
     breadcrumbList.push({
-      name: getLocalizedInfo(category)?.cg_name || "",
-      link: `/category/${getLocalizedInfo(category)?.cg_slug || ""}`,
+      name: currentCategoryInfo?.cg_name || '',
+      link: `/category${accumulatedPath}`,
     });
   }
+
   return breadcrumbList;
 };
+
 
 await loadCategories();
 const slugArray = route.params.slug || [];
