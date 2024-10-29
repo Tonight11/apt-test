@@ -1,7 +1,10 @@
 <template>
   <section>
     <h2 class="mb-2">Категории</h2>
-    <CategoryList :categories="categories" />
+    <Suspense>
+      <CategoryList :categories="categories" />
+      <template #fallback> Loading... </template>
+    </Suspense>
   </section>
 </template>
 

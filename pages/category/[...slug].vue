@@ -17,7 +17,7 @@
 import type { Category, Localization } from "~/types";
 
 const { categories, loadCategories } = useCategories();
-const { getLocalizedInfo } = useLocalization()
+const { getLocalizedInfo } = useLocalization();
 
 const route = useRoute();
 
@@ -37,7 +37,7 @@ const findCategoryBySlug = (
     (cat) => getLocalizedInfo(cat)?.cg_slug === currentSlug
   );
 
-  if (!matchedCategory) return null
+  if (!matchedCategory) return null;
 
   return depth === slugArraySorted.length - 1 || !matchedCategory
     ? matchedCategory
@@ -48,33 +48,48 @@ const findCategoryBySlug = (
       );
 };
 
-const generateBreadcrumbs = (category: Category | null): { name: string; link: string }[] => {
-  const breadcrumbList = [];
-  if (category) {
-    const parentPath = category.path_to_top || [];
+const findCategoryByPath = (
+  categories: Category[],
+  pathToTop: number[]
+): { name: string; link: string }[] => {
+  let currentCategories = categories;
+  let matchedCategory = null;
+  const breadcrumb: { name: string; link: string }[] = [];
+  let accumulatedPath = "/category";
 
-    // Собираем путь для каждой категории в path_to_top, формируя правильные ссылки
-    let accumulatedPath = '';
-    parentPath.forEach((id) => {
-      const parentCategory = categories.value.find((cat) => cat.id === id);
-      if (parentCategory) {
-        const localizedInfo = getLocalizedInfo(parentCategory);
-        accumulatedPath += `/${localizedInfo?.cg_slug || ''}`;
-        
-        breadcrumbList.push({
-          name: localizedInfo?.cg_name || '',
-          link: `/category${accumulatedPath}`,
-        });
-      }
-    });
+  for (const id of pathToTop) {
+    matchedCategory = currentCategories.find((cat) => cat.id === id);
+    if (!matchedCategory) return [];
 
-    // Добавляем текущую категорию в конец крошек
-    const currentCategoryInfo = getLocalizedInfo(category);
-    accumulatedPath += `/${currentCategoryInfo?.cg_slug || ''}`;
-    breadcrumbList.push({
-      name: currentCategoryInfo?.cg_name || '',
-      link: `/category${accumulatedPath}`,
-    });
+    currentCategories = matchedCategory.childs || [];
+
+    const localizedInfo = getLocalizedInfo(matchedCategory);
+    if (localizedInfo?.cg_slug) {
+      accumulatedPath += `/${localizedInfo.cg_slug}`;
+      breadcrumb.push({
+        name: localizedInfo.cg_name || "",
+        link: accumulatedPath,
+      });
+    }
+  }
+
+  return breadcrumb;
+};
+
+const generateBreadcrumbs = (
+  category: Category | null
+): { name: string; link: string }[] => {
+  let breadcrumbList: { name: string; link: string }[] = [];
+
+  if (category?.path_to_top) {
+    const sortedPathToTop = category.path_to_top.sort((a, b) => a - b);
+
+    const parentCategoryBreadcrumbs = findCategoryByPath(
+      categories.value,
+      [...sortedPathToTop, category.id]
+    );
+
+    breadcrumbList = parentCategoryBreadcrumbs;
   }
 
   return breadcrumbList;
@@ -83,7 +98,10 @@ const generateBreadcrumbs = (category: Category | null): { name: string; link: s
 
 await loadCategories();
 const slugArray = route.params.slug || [];
-categoryData.value = findCategoryBySlug(categories.value, slugArray as string[]);
+categoryData.value = findCategoryBySlug(
+  categories.value,
+  slugArray as string[]
+);
 breadcrumbs.value = generateBreadcrumbs(categoryData.value);
 
 useSeoMeta({
@@ -91,7 +109,7 @@ useSeoMeta({
   ogTitle: getLocalizedInfo(categoryData.value)?.cg_name || "Category Page",
   description: getLocalizedInfo(categoryData.value)?.cg_description || "",
   ogDescription: getLocalizedInfo(categoryData.value)?.cg_description || "",
-})
+});
 </script>
 
 <style scoped>
